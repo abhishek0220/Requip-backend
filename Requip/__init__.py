@@ -1,11 +1,10 @@
-from dotenv import load_dotenv
 from flask import Flask
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 import os
 from flask_pymongo import PyMongo
 
-load_dotenv()
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -16,6 +15,6 @@ jwt = JWTManager(app)
 mongo = PyMongo(app)
 db = mongo.db
 
-import resources
-api.add_resource(resources.UserRegistration, '/registration')
-api.add_resource(resources.UserLogin, '/login')
+from Requip.Resources import user
+api.add_resource(user.UserRegistration, '/registration')
+api.add_resource(user.UserLogin, '/login')
