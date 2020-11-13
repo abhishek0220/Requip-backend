@@ -91,16 +91,14 @@ class UserProfileUpdate(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('about', help = 'This field can be blank', required = False)
-        parser.add_argument('usernameOld', help = 'This field can be blank', required = False)
-        parser.add_argument('usernameNew', help = 'This field can be blank', required = False)
+        parser.add_argument('username', help = 'This field can be blank', required = False)
         parser.add_argument('phone', help = 'This field can be blank', required = False)
         data = parser.parse_args()
         _about = data['about']
-        _username_old = data['usernameOld']
-        _username_new = data['usernameNew']
+        _user = data['username']
         _phone = data['phone']
 
-        query = { "username": _username_old }
+        query = { "username": _user }
         values = {}
 
         if (db.users.find_one(query)):
@@ -108,22 +106,17 @@ class UserProfileUpdate(Resource):
                 values['about'] = _about
             if _phone != None:
                 values['phone'] = _phone
-            if _username_new != None:
-                values['username'] = _username_new
 
-            print(values)
+            # print(values)
             query_update = { "$set": values }
 
-            if (db.users.find_one({"username":_username_new})):
-                return {'message': "Username already exsist, try with other name"}
-            else:
-                try:
-                    db.users.update_one(query, query_update)
-                    return {"message" : "Information updated successfully"}
-                except Exception as e:
-                    print("could not able to update the info")
-                    print("Exception", e)
-                    return {"message": "Sorry due to some reason the information is not updated..!!"}
+            try:
+                db.users.update_one(query, query_update)
+                return {"message" : "Information updated successfully"}
+            except Exception as e:
+                print("could not able to update the info")
+                print("Exception", e)
+                return {"message": "Sorry due to some reason the information is not updated..!!"}
 
         else:
             return {"message": "User does not exists"}
