@@ -7,8 +7,10 @@
 ## Technology stack
 
 - Python 3.7
+- Flask framework
 - Database : MongoDB
-- Server: 
+- Azure app service
+- Deployment : Github Actions
     
 # Instructions to Run locally and contribute
 1. Install [Python](https://www.python.org/downloads/).
@@ -23,3 +25,4 @@ MONGODB_URI = <token>
 ```
 7. Create System Var `$env:FLASK_APP="app.py"`, `$env:FLASK_DEBUG=1` using terminal.
 8. Enter `flask run` to create server.
+9. Push the changes in a separate branch and create a pull request. After the PR is merged, it will be automatically deployed to Azure App Service via Github Actions.
