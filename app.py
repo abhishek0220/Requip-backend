@@ -18,3 +18,4 @@ db = mongo.db
 
 import resources
 api.add_resource(resources.UserRegistration, '/registration')
+api.add_resource(resources.UserLogin, '/login')
