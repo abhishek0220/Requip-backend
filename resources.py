@@ -36,26 +36,28 @@ class UserRegistration(Resource):
             'refresh_token': refresh_token
             }
 
-class User_login(Resource):
-    def __init__(self):
-        pass
-
+class UserLogin(Resource):
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('email_or_username', help = 'This field can be blank', required = False)
+        parser.add_argument('id', help = 'This field can be blank', required = False)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
-        email_or_username = data['email_or_username']
+        _id = data['id']
         password = data['password']
-        phone_number = data['phone_number']
-
-        if(db.users.find_one({'email': email_or_username}) or db.users.find_one({'username' : email_or_username})):
-            access_token = create_access_token(identity = email_or_username)
-            refresh_token = create_refresh_token(identity = email_or_username)
-            return {
-            'message': 'Logging in User {}'.format(data['username']),
-            'access_token': access_token,
-            'refresh_token': refresh_token
-            }
+        if('@' in _id):
+            user = db.users.find_one({'email': _id })
+        else:
+            user = db.users.find_one({'username': _id })
+        if(user):
+            if(user['password'] == password):
+                access_token = create_access_token(identity = user['username'])
+                refresh_token = create_refresh_token(identity = user['username'])
+                return {
+                'message': 'Logging in User {}'.format(user['username']),
+                'access_token': access_token,
+                'refresh_token': refresh_token
+                }
+            else:
+                return {'message': 'Invalid Credentials'}
         else:
             return {'message': 'User does not exists'}
