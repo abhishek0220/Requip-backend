@@ -19,3 +19,4 @@ from Requip.Resources import user
 api.add_resource(user.UserRegistration, '/registration')
 api.add_resource(user.UserLogin, '/login')
 api.add_resource(user.UserProfile, '/profile/<string:username>')
+api.add_resource(user.UserProfileUpdate, '/profile/updateprofile')

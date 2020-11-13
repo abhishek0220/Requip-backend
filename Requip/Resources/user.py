@@ -86,3 +86,45 @@ class UserProfile(Resource):
 
         else:
             return {'message': 'User does not exists'}
+
+class UserProfileUpdate(Resource):
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('email', help = 'This field can be blank', required = False)
+        parser.add_argument('about', help = 'This field can be blank', required = False)
+        parser.add_argument('usernameOld', help = 'This field can be blank', required = False)
+        parser.add_argument('usernameNew', help = 'This field can be blank', required = False)
+        parser.add_argument('phone', help = 'This field can be blank', required = False)
+        data = parser.parse_args()
+        _email = data['email']
+        _about = data['about']
+        _username_old = data['usernameOld']
+        _username_new = data['usernameNew']
+        _phone = data['phone']
+
+        query = { "username": _username_old }
+        values = {}
+
+        if (db.users.find_one(query)):
+            if _email != None:
+                values['email'] = _email
+            if _about != None:
+                values['about'] = _about
+            if _phone != None:
+                values['phone'] = _phone
+            if _username_new != None:
+                values['username'] = _username_new
+
+            print(values)
+            query_update = { "$set": values }
+
+            try:
+                db.users.update_one(query, query_update)
+                return {"message" : "Information updated successfully"}
+            except Exception as e:
+                print("could not able to update the info")
+                print("Exception", e)
+                return {"message": "Sorry due to some reason the information is not updated..!!"}
+
+        else:
+            return {"message": "User does not exists"}
