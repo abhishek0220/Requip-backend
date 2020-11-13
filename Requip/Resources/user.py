@@ -61,3 +61,14 @@ class UserLogin(Resource):
                 return {'message': 'Invalid Credentials'}
         else:
             return {'message': 'User does not exists'}
+
+class UserProfile(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('username', help = 'This field can be blank', required = True)
+        data = parser.parse_args()
+        _username = data['username']
+        if (db.users.find_one({'username': _username})):
+            return db.users.find_one({'username': _username})
+        else:
+            return {'message': 'User does not exists'}
