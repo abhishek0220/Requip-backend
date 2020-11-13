@@ -15,8 +15,13 @@ jwt = JWTManager(app)
 mongo = PyMongo(app)
 db = mongo.db
 
-from Requip.Resources import user
+from Requip.Resources import user, saman
 api.add_resource(user.UserRegistration, '/registration')
 api.add_resource(user.UserLogin, '/login')
 api.add_resource(user.UserProfile, '/profile/<string:username>')
 api.add_resource(user.UserProfileUpdate, '/profile/updateprofile')
+api.add_resource(saman.addSaman, '/saman/addsaman')
+api.add_resource(saman.editsaman, '/saman/editsaman')
+api.add_resource(saman.deletesaman, '/saman/deletesaman')
+api.add_resource(saman.listallsaman, '/saman')
+api.add_resource(saman.singleSaman, '/saman/<string:id>')
