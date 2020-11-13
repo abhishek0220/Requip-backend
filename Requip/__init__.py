@@ -1,12 +1,14 @@
 from flask import Flask
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS, cross_origin
 import os
 from flask_pymongo import PyMongo
 
 
 
 app = Flask(__name__)
+cors = CORS(app)
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
 
