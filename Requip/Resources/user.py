@@ -39,7 +39,7 @@ class UserRegistration(Resource):
 class UserLogin(Resource):
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('id', help = 'This field can be blank', required = False)
+        parser.add_argument('id', help = 'This field can be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
         _id = data['id']
@@ -82,8 +82,13 @@ class UserProfile(Resource):
                     'email' : _email,
                     'phone_number' : phone_number
                 }
-
             return _user
-
         else:
             return {'message': 'User does not exists'}
+
+class TokenRefresh(Resource):
+    @jwt_refresh_token_required
+    def post(self):
+        current_user = get_jwt_identity()
+        access_token = create_access_token(identity = current_user)
+        return {'access_token': access_token}
