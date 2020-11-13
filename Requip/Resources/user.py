@@ -54,6 +54,7 @@ class UserLogin(Resource):
                 refresh_token = create_refresh_token(identity = user['username'])
                 return {
                 'message': 'Logging in User {}'.format(user['username']),
+                'username':user['username'],
                 'access_token': access_token,
                 'refresh_token': refresh_token
                 }
