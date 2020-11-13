@@ -64,8 +64,8 @@ class UserLogin(Resource):
 
 class UserProfile(Resource):
     def get(self, username):
-        if (db.users.find_one({'username': username})):
-            obj = db.users.find_one({'username': username})
+        obj = db.users.find_one({'username': username})
+        if (obj != None):
             _username = obj["username"]
             _email = obj["email"]
             try :
@@ -83,6 +83,6 @@ class UserProfile(Resource):
                 }
 
             return _user
-            
+
         else:
             return {'message': 'User does not exists'}
