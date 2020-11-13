@@ -86,6 +86,18 @@ class UserProfile(Resource):
         else:
             return {'message': 'User does not exists'}
 
+class User(Resource):
+    @jwt_required
+    def get(self):
+        username = get_jwt_identity()
+        user = db.users.find_one({'username': username})
+        if (user != None):
+            del user['_id']
+            del user['password']
+            return user
+        else:
+            return {'message': 'User does not exists'}
+
 class TokenRefresh(Resource):
     @jwt_refresh_token_required
     def post(self):
