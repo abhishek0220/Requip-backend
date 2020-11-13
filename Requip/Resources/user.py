@@ -62,3 +62,28 @@ class UserLogin(Resource):
                 return {'message': 'Invalid Credentials'}
         else:
             return {'message': 'User does not exists'}
+
+class UserProfile(Resource):
+    def get(self, username):
+        obj = db.users.find_one({'username': username})
+        if (obj != None):
+            _username = obj["username"]
+            _email = obj["email"]
+            try :
+                _phone = obj["phone"]
+            except :
+                _user = {
+                    'username' : _username,
+                    'email' : _email,
+                }
+            else:
+                _user = {
+                    'username' : _username,
+                    'email' : _email,
+                    'phone_number' : phone_number
+                }
+
+            return _user
+
+        else:
+            return {'message': 'User does not exists'}
