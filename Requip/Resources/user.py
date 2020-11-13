@@ -63,12 +63,26 @@ class UserLogin(Resource):
             return {'message': 'User does not exists'}
 
 class UserProfile(Resource):
-    def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('username', help = 'This field can be blank', required = True)
-        data = parser.parse_args()
-        _username = data['username']
-        if (db.users.find_one({'username': _username})):
-            return db.users.find_one({'username': _username})
+    def get(self, username):
+        if (db.users.find_one({'username': username})):
+            obj = db.users.find_one({'username': username})
+            _username = obj["username"]
+            _email = obj["email"]
+            try :
+                _phone = obj["phone"]
+            except :
+                _user = {
+                    'username' : _username,
+                    'email' : _email,
+                }
+            else:
+                _user = {
+                    'username' : _username,
+                    'email' : _email,
+                    'phone_number' : phone_number
+                }
+
+            return _user
+            
         else:
             return {'message': 'User does not exists'}
