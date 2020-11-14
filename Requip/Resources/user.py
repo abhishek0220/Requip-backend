@@ -3,9 +3,10 @@ from flask import Response
 from Requip import db
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 import os, shutil
-import base64
+import base64, uuid
 from io import BytesIO
 from PIL import Image
+from Requip.azureStorage import FileManagement
 
 class UserRegistration(Resource):
     def post(self):
@@ -14,7 +15,7 @@ class UserRegistration(Resource):
         parser.add_argument('name', help = 'This field cannot be blank', required = True)
         parser.add_argument('email', help = 'This field cannot be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
-        parser.add_argument('phone_number', help = 'This field can be blank', required = False)
+        parser.add_argument('phone_number', help = 'This field can be blank', required = True)
         data = parser.parse_args()
         username = data['username']
         email = data['email']
@@ -23,12 +24,14 @@ class UserRegistration(Resource):
         phone_number = data['phone_number']
         if(db.users.find_one({'email': email}) or db.users.find_one({'username' : username})):
             return {'message': 'User already exists'}
+        img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
         user = {
             'username' : username,
             'name' : name,
             'email' : email,
             'password' : password,
             'phone' : phone_number,
+            'image' : img_loc,
             'about' : "My text by default"
         }
         try:
@@ -36,13 +39,8 @@ class UserRegistration(Resource):
         except:
             return {'message' : "Some Error"}
         else:
-            folder = os.path.join(os.getenv('STATIC'),'users', username)
-            post_folder = os.path.join(folder,'posts')
-            os.mkdir(folder)
-            os.mkdir(post_folder)
-            def_img = os.path.join(os.getenv('STATIC'),'user.png')
-            tar_img = os.path.join(folder,'user.png')
-            shutil.copy(def_img, tar_img)
+            def_img = os.path.join(os.getenv('FILES'),'user.jpg')
+            FileManagement.upload(img_loc,def_img)
             return {
             'message': 'User {} was created'.format(data['username']),
             'username' : f"{data['username']}"
@@ -98,15 +96,27 @@ class ChangeProfilePic(Resource):
     def post(self):
         username = get_jwt_identity()
         try:
+            _user = db.users.find_one({'username': username})
+            if(_user == None):
+                return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
             img_rev = request.data.decode('ascii').split(',')[1]
             image_data = bytes(img_rev, encoding="ascii")
             im = Image.open(BytesIO(base64.b64decode(image_data)))
             if(im.size != (400,400)):
                 return Response("{'message': 'Invalid Size'}", status=403, mimetype='application/json')
-            folder = os.path.join(os.getenv('STATIC'),'users', username)
-            tar_img = os.path.join(folder,'user.png')
-            im.save(tar_img)
-            return {'message': 'Saved Successfully'}
+            tar_loc = f'{username}_{str(uuid.uuid4())}.jpg'
+            img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
+            file_loc = os.path.join(os.getenv('FILES'),tar_loc)
+            im = im.convert("RGB")
+            im.save(file_loc)
+            FileManagement.upload(img_loc, file_loc)
+            FileManagement.delete(_user['image'])
+            db.users.update_one({'username':username}, { "$set": {'image':img_loc} })
+            os.remove(file_loc)
+            return {
+                'message': 'Saved Successfully',
+                'image':img_loc
+                }
         except:
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 

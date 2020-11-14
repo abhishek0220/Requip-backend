@@ -5,8 +5,6 @@ from flask_cors import CORS, cross_origin
 import os, shutil
 from flask_pymongo import PyMongo
 
-
-
 app = Flask(__name__)
 cors = CORS(app)
 api = Api(app)
@@ -16,6 +14,11 @@ app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 jwt = JWTManager(app)
 mongo = PyMongo(app)
 db = mongo.db
+
+@app.route('/')
+def hdfd():
+    return "Running..."
+
 
 from Requip.Resources import user, saman
 api.add_resource(user.UserRegistration, '/registration')
