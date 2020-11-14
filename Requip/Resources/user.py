@@ -1,8 +1,11 @@
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, request
 from flask import Response
 from Requip import db
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 import os, shutil
+import base64
+from io import BytesIO
+from PIL import Image
 
 class UserRegistration(Resource):
     def post(self):
@@ -89,6 +92,23 @@ class UserProfile(Resource):
             return _user
         else:
             return {'message': 'User does not exists'}
+
+class ChangeProfilePic(Resource):
+    @jwt_required
+    def post(self):
+        username = get_jwt_identity()
+        try:
+            img_rev = request.data.decode('ascii').split(',')[1]
+            image_data = bytes(img_rev, encoding="ascii")
+            im = Image.open(BytesIO(base64.b64decode(image_data)))
+            if(im.size != (400,400)):
+                return Response("{'message': 'Invalid Size'}", status=403, mimetype='application/json')
+            folder = os.path.join(os.getenv('STATIC'),'users', username)
+            tar_img = os.path.join(folder,'user.png')
+            im.save(tar_img)
+            return {'message': 'Saved Successfully'}
+        except:
+            return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class UserProfileUpdate(Resource):
     @jwt_required
