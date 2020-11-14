@@ -8,6 +8,7 @@ class UserRegistration(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('username', help = 'This field cannot be blank', required = True)
+        parser.add_argument('name', help = 'This field cannot be blank', required = True)
         parser.add_argument('email', help = 'This field cannot be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         parser.add_argument('phone_number', help = 'This field can be blank', required = False)
@@ -15,14 +16,17 @@ class UserRegistration(Resource):
         username = data['username']
         email = data['email']
         password = data['password']
+        name = data['name']
         phone_number = data['phone_number']
         if(db.users.find_one({'email': email}) or db.users.find_one({'username' : username})):
             return {'message': 'User already exists'}
         user = {
             'username' : username,
+            'name' : name,
             'email' : email,
             'password' : password,
-            'phone' : phone_number
+            'phone' : phone_number,
+            'about' : "My text by default"
         }
         try:
             db.users.insert(user)
@@ -74,19 +78,14 @@ class UserProfile(Resource):
         if (obj != None):
             _username = obj["username"]
             _email = obj["email"]
-            try :
-                _phone = obj["phone"]
-            except :
-                _user = {
-                    'username' : _username,
-                    'email' : _email,
-                }
-            else:
-                _user = {
-                    'username' : _username,
-                    'email' : _email,
-                    'phone_number' : phone_number
-                }
+            _name = obj["name"]
+            _about = obj['about']
+            _user = {
+                'username' : _username,
+                'email' : _email,
+                'name' : _name,
+                'about' : _about
+            }
             return _user
         else:
             return {'message': 'User does not exists'}
