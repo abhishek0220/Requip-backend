@@ -2,6 +2,7 @@ from flask_restful import Resource, reqparse
 from flask import Response
 from Requip import db
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+import os, shutil
 
 class UserRegistration(Resource):
     def post(self):
@@ -28,18 +29,22 @@ class UserRegistration(Resource):
         except:
             return {'message' : "Some Error"}
         else:
-            access_token = create_access_token(identity = username)
-            refresh_token = create_refresh_token(identity = username)
+            folder = os.path.join(os.getenv('STATIC'),'users', username)
+            post_folder = os.path.join(folder,'posts')
+            os.mkdir(folder)
+            os.mkdir(post_folder)
+            def_img = os.path.join(os.getenv('STATIC'),'user.png')
+            tar_img = os.path.join(folder,'user.png')
+            shutil.copy(def_img, tar_img)
             return {
             'message': 'User {} was created'.format(data['username']),
-            'access_token': access_token,
-            'refresh_token': refresh_token
+            'username' : f"{data['username']}"
             }
 
 class UserLogin(Resource):
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('id', help = 'This field can be blank', required = False)
+        parser.add_argument('id', help = 'This field can be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
         _id = data['id']
@@ -54,6 +59,7 @@ class UserLogin(Resource):
                 refresh_token = create_refresh_token(identity = user['username'])
                 return {
                 'message': 'Logging in User {}'.format(user['username']),
+                'username':user['username'],
                 'access_token': access_token,
                 'refresh_token': refresh_token
                 }
@@ -117,3 +123,22 @@ class UserProfileUpdate(Resource):
                 return {"message": "Sorry due to some reason the information is not updated..!!"}
         else:
             return {"message": "User does not exists"}
+          
+class User(Resource):
+    @jwt_required
+    def get(self):
+        username = get_jwt_identity()
+        user = db.users.find_one({'username': username})
+        if (user != None):
+            del user['_id']
+            del user['password']
+            return user
+        else:
+            return {'message': 'User does not exists'}
+
+class TokenRefresh(Resource):
+    @jwt_refresh_token_required
+    def post(self):
+        current_user = get_jwt_identity()
+        access_token = create_access_token(identity = current_user)
+        return {'access_token': access_token}
