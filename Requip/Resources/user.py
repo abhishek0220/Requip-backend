@@ -2,6 +2,7 @@ from flask_restful import Resource, reqparse
 from flask import Response
 from Requip import db
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+import os, shutil
 
 class UserRegistration(Resource):
     def post(self):
@@ -28,12 +29,16 @@ class UserRegistration(Resource):
         except:
             return {'message' : "Some Error"}
         else:
-            access_token = create_access_token(identity = username)
-            refresh_token = create_refresh_token(identity = username)
+            folder = os.path.join(os.getenv('STATIC'),'users', username)
+            post_folder = os.path.join(folder,'posts')
+            os.mkdir(folder)
+            os.mkdir(post_folder)
+            def_img = os.path.join(os.getenv('STATIC'),'user.png')
+            tar_img = os.path.join(folder,'user.png')
+            shutil.copy(def_img, tar_img)
             return {
             'message': 'User {} was created'.format(data['username']),
-            'access_token': access_token,
-            'refresh_token': refresh_token
+            'username' : f"{data['username']}"
             }
 
 class UserLogin(Resource):
