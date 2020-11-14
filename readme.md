@@ -8,8 +8,9 @@
 
 - Python 3.7
 - Flask framework
+- Running on: Azure app service
+- Media Server: Azure Blob Storage
 - Database : MongoDB
-- Azure app service
 - Deployment : Github Actions
     
 # Instructions to Run locally and contribute
