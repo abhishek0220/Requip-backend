@@ -22,7 +22,7 @@ class UserRegistration(Resource):
             'username' : username,
             'email' : email,
             'password' : password,
-            'phone_number' : phone_number
+            'phone' : phone_number
         }
         try:
             db.users.insert(user)
@@ -91,6 +91,39 @@ class UserProfile(Resource):
         else:
             return {'message': 'User does not exists'}
 
+class UserProfileUpdate(Resource):
+    @jwt_required
+    def post(self):
+        _user = get_jwt_identity()
+        parser = reqparse.RequestParser()
+        parser.add_argument('about', help = 'This field can be blank', required = False)
+        parser.add_argument('phone', help = 'This field can be blank', required = False)
+        data = parser.parse_args()
+        _about = data['about']
+        _phone = data['phone']
+
+        query = { "username": _user }
+        values = {}
+
+        if (db.users.find_one(query)):
+            if _about != None:
+                values['about'] = _about
+            if _phone != None:
+                values['phone'] = _phone
+
+            # print(values)
+            query_update = { "$set": values }
+
+            try:
+                db.users.update_one(query, query_update)
+                return {"message" : "Information updated successfully"}
+            except Exception as e:
+                print("could not able to update the info")
+                print("Exception", e)
+                return {"message": "Sorry due to some reason the information is not updated..!!"}
+        else:
+            return {"message": "User does not exists"}
+          
 class User(Resource):
     @jwt_required
     def get(self):
