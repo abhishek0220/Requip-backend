@@ -75,19 +75,11 @@ class UserLogin(Resource):
 
 class UserProfile(Resource):
     def get(self, username):
-        obj = db.users.find_one({'username': username})
-        if (obj != None):
-            _username = obj["username"]
-            _email = obj["email"]
-            _name = obj["name"]
-            _about = obj['about']
-            _user = {
-                'username' : _username,
-                'email' : _email,
-                'name' : _name,
-                'about' : _about
-            }
-            return _user
+        user = db.users.find_one({'username': username})
+        if (user != None):
+            del user['_id']
+            del user['password']
+            return user
         else:
             return {'message': 'User does not exists'}
 
