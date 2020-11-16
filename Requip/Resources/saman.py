@@ -1,8 +1,11 @@
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, request7
 from flask import Response
 from Requip import db
-import uuid
+import uuid, base64
+from io import BytesIO
+from PIL import Image
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from Requip.azureStorage import FileManagement
 
 '''
 contains four methods for saman
@@ -11,6 +14,36 @@ contains four methods for saman
 3. to edit the advertisement for saman
 4. to return list of all saman advertisement
 '''
+
+
+class ChangeProfilePic(Resource):
+    @jwt_required
+    def post(self):
+        username = get_jwt_identity()
+        try:
+            _user = db.users.find_one({'username': username})
+            if(_user == None):
+                return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
+            img_rev = request.data.decode('ascii').split(',')[1]
+            image_data = bytes(img_rev, encoding="ascii")
+            im = Image.open(BytesIO(base64.b64decode(image_data)))
+            if(im.size != (600,600)):
+                return Response("{'message': 'Invalid Size'}", status=403, mimetype='application/json')
+            tar_loc = f'{username}_{str(uuid.uuid4())}.jpg'
+            img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
+            file_loc = os.path.join(os.getenv('FILES'),tar_loc)
+            im = im.convert("RGB")
+            im.save(file_loc)
+            FileManagement.upload(img_loc, file_loc)
+            FileManagement.delete(_user['image'])
+            db.users.update_one({'username':username}, { "$set": {'image':img_loc} })
+            os.remove(file_loc)
+            return {
+                'message': 'Saved Successfully',
+                'image':img_loc
+                }
+        except:
+            return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class addSaman(Resource):
     @jwt_required
@@ -35,7 +68,8 @@ class addSaman(Resource):
 
         saman = {}
 
-        saman['_id'] = str(uuid.uuid4())
+        post_id = str(uuid.uuid4())
+        saman['_id'] = post_id
         saman["username"] = username
         saman['price'] = _price
         saman['tag']   = _tag
@@ -55,11 +89,33 @@ class addSaman(Resource):
 
 
         if (db.saman.find_one({"username" : username}) and db.saman.find_one({"title" : _title})):
-            return {"message" : "The title exsists for the current user, Please use the different title to identify your Saaman"}
+            return Response("message" : "The title exsists for the current user or maybe user doesn't exist, Please use the different title to identify your Saaman or login with valid credentials", status=404, mimetype='application/json')
         else:
             try :
-                db.saman.insert_one(saman)
-                return {"message":"new post of saaman is created successfully..!!"}
+                try:
+                    _user = db.users.find_one({'username': username})
+                    if(_user == None):
+                        return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
+                    img_rev = request.data.decode('ascii').split(',')[1]
+                    image_data = bytes(img_rev, encoding="ascii")
+                    im = Image.open(BytesIO(base64.b64decode(image_data)))
+                    if(im.size != (600,600)):
+                        return Response("{'message': 'Invalid Size'}", status=403, mimetype='application/json')
+                    tar_loc = f'{username}_{str(uuid.uuid4())}.jpg'
+                    post_img_path = f'{username}/{post_id}/{str(uuid.uuid4())}.jpg'
+                    file_loc = os.path.join(os.getenv('FILES'),tar_loc)
+                    im = im.convert("RGB")
+                    im.save(file_loc)
+                    FileManagement.upload(post_img_path, file_loc)
+                    saman['images'] = post_img_path
+                    os.remove(file_loc)
+                    db.saman.insert_one(saman)
+
+                    return {"message":"new post of saaman is created successfully..!!"}
+                except:
+                    return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
+
+
             except Exception as e:
                 return {"message" :"error occured, {}".format(e)}
 
