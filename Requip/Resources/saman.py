@@ -1,4 +1,4 @@
-from flask_restful import Resource, reqparse, request7
+from flask_restful import Resource, reqparse, request
 from flask import Response
 from Requip import db
 import uuid, base64
@@ -15,35 +15,6 @@ contains four methods for saman
 4. to return list of all saman advertisement
 '''
 
-
-class ChangeProfilePic(Resource):
-    @jwt_required
-    def post(self):
-        username = get_jwt_identity()
-        try:
-            _user = db.users.find_one({'username': username})
-            if(_user == None):
-                return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
-            img_rev = request.data.decode('ascii').split(',')[1]
-            image_data = bytes(img_rev, encoding="ascii")
-            im = Image.open(BytesIO(base64.b64decode(image_data)))
-            if(im.size != (600,600)):
-                return Response("{'message': 'Invalid Size'}", status=403, mimetype='application/json')
-            tar_loc = f'{username}_{str(uuid.uuid4())}.jpg'
-            img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
-            file_loc = os.path.join(os.getenv('FILES'),tar_loc)
-            im = im.convert("RGB")
-            im.save(file_loc)
-            FileManagement.upload(img_loc, file_loc)
-            FileManagement.delete(_user['image'])
-            db.users.update_one({'username':username}, { "$set": {'image':img_loc} })
-            os.remove(file_loc)
-            return {
-                'message': 'Saved Successfully',
-                'image':img_loc
-                }
-        except:
-            return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class addSaman(Resource):
     @jwt_required
