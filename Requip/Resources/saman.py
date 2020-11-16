@@ -25,6 +25,7 @@ class addSaman(Resource):
         parser.add_argument('title', help = 'This field cannot be blank', required = True)
         parser.add_argument('price', help = 'This field cannot be blank', required = True)
         parser.add_argument('tag', help = 'This field cannot be blank', required = True)
+        parser.add_argument('imgage', help = 'This field cannot be blank', required = True)
         parser.add_argument('brand', help = 'This field can be blank', required = False)
         parser.add_argument('description', help = 'This field can be blank', required = False)
         parser.add_argument('address', help = 'This field can be blank', required = False)
@@ -67,7 +68,7 @@ class addSaman(Resource):
                     _user = db.users.find_one({'username': username})
                     if(_user == None):
                         return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
-                    img_rev = request.data.decode('ascii').split(',')[1]
+                    img_rev = data['image'].split(',')[1]
                     image_data = bytes(img_rev, encoding="ascii")
                     im = Image.open(BytesIO(base64.b64decode(image_data)))
                     if(im.size != (600,600)):
