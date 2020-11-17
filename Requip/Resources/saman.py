@@ -61,7 +61,7 @@ class addSaman(Resource):
 
 
         if (db.saman.find_one({"username" : username}) and db.saman.find_one({"title" : _title})):
-            return Response("message" : "The title exsists for the current user or maybe user doesn't exist, Please use the different title to identify your Saaman or login with valid credentials", status=404, mimetype='application/json')
+            return Response('{"message" : "The title exsists for the current user or maybe user doesn\'t exist, Please use the different title to identify your Saaman or login with valid credentials"}', status=404, mimetype='application/json')
         else:
             try :
                 try:
