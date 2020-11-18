@@ -43,8 +43,6 @@ class addSaman(Resource):
         saman["title"] = _title
         saman['discription'] = _discription
         saman['phone'] = _phone
-
-        
         _user = db.users.find_one({'username': username})
         if(_user == None):
             return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
@@ -155,10 +153,10 @@ class listallsaman(Resource):
     def get(self):
         total_saman = []
         try:
-            saman_list = db.saman.find()
+            skip = int(request.args.get('skip',0))
+            saman_list = db.saman.find().limit(5).skip(skip)
         except Exception as e:
             return {'message':"error occured while loading, error is -> {} ".format(e)}
-
         for i in saman_list:
             total_saman.append(i)
 
