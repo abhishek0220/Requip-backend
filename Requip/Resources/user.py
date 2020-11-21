@@ -15,7 +15,7 @@ class UserRegistration(Resource):
         parser.add_argument('name', help = 'This field cannot be blank', required = True)
         parser.add_argument('email', help = 'This field cannot be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
-        parser.add_argument('phone_number', help = 'This field can be blank', required = True)
+        parser.add_argument('phone_number', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
         username = data['username']
         email = data['email']
@@ -42,14 +42,14 @@ class UserRegistration(Resource):
             def_img = os.path.join(os.getenv('FILES'),'user.jpg')
             FileManagement.upload(img_loc,def_img)
             return {
-            'message': 'User {} was created'.format(data['username']),
+            'message': 'User {} is created'.format(data['username']),
             'username' : f"{data['username']}"
             }
 
 class UserLogin(Resource):
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('id', help = 'This field can be blank', required = True)
+        parser.add_argument('id', help = 'This field cannot be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
         _id = data['id']
@@ -140,7 +140,7 @@ class UserProfileUpdate(Resource):
                 return Response("{'message': 'Sorry due to some reason the information is not updated..!!'}", status=500, mimetype='application/json')
         else:
             return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
-          
+
 class User(Resource):
     @jwt_required
     def get(self):
