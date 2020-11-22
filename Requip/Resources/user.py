@@ -52,14 +52,12 @@ class UserLogin(Resource):
         parser.add_argument('id', help = 'This field cannot be blank', required = True)
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
-        _id = data['id']
-        password = data['password']
-        if('@' in _id):
-            user = db.users.find_one({'email': _id })
+        if('@' in data['id']):
+            user = db.users.find_one({'email': data['id'] })
         else:
-            user = db.users.find_one({'username': _id })
+            user = db.users.find_one({'username': data['id'] })
         if(user):
-            if(user['password'] == password):
+            if(user['password'] == data['password']):
                 access_token = create_access_token(identity = user['username'])
                 refresh_token = create_refresh_token(identity = user['username'])
                 return {

@@ -29,20 +29,8 @@ class addSaman(Resource):
         parser.add_argument('description', help = 'This field can be blank', required = True)
         parser.add_argument('phone', help = 'This field can be blank', required = True)
         data = parser.parse_args()
-        _price = data['price']
-        _phone = data['phone']
-        _discription = data['description']
-        _title = data['title']
-        _type = data['type']
-        saman = {}
         post_id = str(uuid.uuid4())
-        saman['_id'] = post_id
-        saman["username"] = username
-        saman['price'] = _price
-        saman['type']   = _type
-        saman["title"] = _title
-        saman['discription'] = _discription
-        saman['phone'] = _phone
+        data['_id'] = post_id
         _user = db.users.find_one({'username': username})
         if(_user == None):
             return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
@@ -58,87 +46,54 @@ class addSaman(Resource):
             im = im.convert("RGB")
             im.save(file_loc)
             FileManagement.upload(post_img_path, file_loc)
-            saman['images'] = post_img_path
+            data['images'] = post_img_path
             os.remove(file_loc)
             db.saman.insert_one(saman)
             return {"message":"new post of saaman is created successfully..!!"}
         except:
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
-class editsaman(Resource):
+class SingleSaman(Resource):
     def get(self, id):
-        try:
-            return db.saman.find_one({"_id" : id})
-        except Exception as e:
-            return {'message':"error occured while loading, error is -> {} ".format(e)}
+        item = db.saman.find_one({"_id" : id})
+        if(item == None):
+            return Response( '404 Not Found', status=404,)
+        item['moneytized'] = 'priced'
+        if(int(item['price']) == 0):
+            item['moneytized'] = 'free'
+        return item
 
     @jwt_required
     def post(self, id):
         username = get_jwt_identity()
-
         parser = reqparse.RequestParser()
         parser.add_argument('title', help = 'This field cannot be blank', required = True)
-        parser.add_argument('description', help = 'This field cannot be blank', required = True)
         parser.add_argument('price', help = 'This field cannot be blank', required = True)
-        parser.add_argument('brand', help = 'This field cannot be blank', required = True)
-        parser.add_argument('tag', help = 'This field cannot be blank', required = True)
-        parser.add_argument('address', help = 'This field cannot be blank', required = True)
-
+        #parser.add_argument('image', help = 'This field cannot be blank', required = False)
+        parser.add_argument('type', help = 'This field can be blank', required = True)
+        parser.add_argument('description', help = 'This field can be blank', required = True)
+        parser.add_argument('phone', help = 'This field can be blank', required = True)
         data = parser.parse_args()
-        _title = data['title']
-        _discription = data['description']
-        _price = data['price']
-        _brand = data['brand']
-        _tag = data['tag']
-        _address = data['address']
-
-        print(id)
         query = {'username': username, "_id": id}
-
-        saman_values = {}
-        print(username)
         if (db.saman.find_one(query)):
-            print(db.saman.find_one(query))
-            if _title != None:
-                saman_values["title"] = _title
-            if _discription != None:
-                saman_values['discription'] = _discription
-            if _price != None:
-                saman_values['price'] = _price
-            if _brand != None:
-                saman_values['brand'] = _brand
-            if _tag != None:
-                saman_values['tag']   = _tag
-            if _address != None:
-                saman_values['address'] = _address
-
-            query_update = { "$set": saman_values }
-
+            query_update = { "$set": data }
             try:
                 db.saman.update_one(query, query_update)
                 return {"message" : "Information of your saman updated successfully"}
             except Exception as e:
                 print("could not able to update the info of saaman")
                 print("Exception", e)
-                return {"message": "Sorry due to some reason the information of your saman is not updated..!!"}
-
+                return Response("{'message': 'Sorry due to some reason the information of your saman is not updated..!!'}", status=403, mimetype='application/json')
         else:
-            return {'message': 'You cannot edit this saman'}
+            return Response("{'message': 'You cannot edit this saman'}", status=403, mimetype='application/json')
 
-
-class deletesaman(Resource):
     @jwt_required
-    def delete(self):
+    def delete(self, id):
         username = get_jwt_identity()
-
-        parser = reqparse.RequestParser()
-        parser.add_argument('title', help = 'This field canot be blank', required = True)
-
-        data = parser.parse_args()
-        _title = data['title']
-
-        query = {'username': username, "title": _title}
-
+        query = {'username': username, "_id": id}
+        item = db.saman.find_one(query)
+        if(item == None):
+            return {'message': 'You cannot edit this saman'}
         try:
             db.saman.delete_one(query)
             return {"message" : "Your saaman's post has been deleted successfully..!!"}
@@ -155,5 +110,4 @@ class listallsaman(Resource):
             return {'message':"error occured while loading, error is -> {} ".format(e)}
         for i in saman_list:
             total_saman.append(i)
-
         return total_saman
