@@ -66,59 +66,51 @@ class addSaman(Resource):
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class editsaman(Resource):
+    def get(self, id):
+        try:
+            return db.saman.find_one({"_id" : id})
+        except Exception as e:
+            return {'message':"error occured while loading, error is -> {} ".format(e)}
+
     @jwt_required
-    def post(self):
+    def post(self, id):
         username = get_jwt_identity()
 
         parser = reqparse.RequestParser()
-        parser.add_argument('titleOld', help = 'This field canot be blank', required = True)
-        parser.add_argument('titleNew', help = 'This field can be blank', required = False)
-        parser.add_argument('description', help = 'This field can be blank', required = False)
-        parser.add_argument('price', help = 'This field can be blank', required = False)
-        parser.add_argument('brand', help = 'This field can be blank', required = False)
-        parser.add_argument('tag', help = 'This field can be blank', required = False)
-        parser.add_argument('address', help = 'This field can be blank', required = False)
+        parser.add_argument('title', help = 'This field cannot be blank', required = True)
+        parser.add_argument('description', help = 'This field cannot be blank', required = True)
+        parser.add_argument('price', help = 'This field cannot be blank', required = True)
+        parser.add_argument('brand', help = 'This field cannot be blank', required = True)
+        parser.add_argument('tag', help = 'This field cannot be blank', required = True)
+        parser.add_argument('address', help = 'This field cannot be blank', required = True)
 
         data = parser.parse_args()
-        _title_old = data['titleOld']
-        _title_new = data['titleNew']
+        _title = data['title']
         _discription = data['description']
         _price = data['price']
         _brand = data['brand']
         _tag = data['tag']
         _address = data['address']
 
-        query = {'username': username, "title": _title_old}
+        print(id)
+        query = {'username': username, "_id": id}
+
         saman_values = {}
-        saman_values["username"] = username
-
-
-
-        if (db.saman.find_one(db.saman.find_one(query))):
-            if _title!=None:
-                saman_values["title"] = _title_new
-            else:
-                saman_values["title"] = _title_old
-            if _price != None:
-                saman_values['price'] = _price
-            else:
-                saman_values["price"] = ""
-            if _tag != None:
-                saman_values['tag']   = _tag
-            else:
-                saman_values["tag"] = ""
-            if _brand != None:
-                saman_values['brand'] = _brand
-            else:
-                saman_values["brand"] = ""
+        print(username)
+        if (db.saman.find_one(query)):
+            print(db.saman.find_one(query))
+            if _title != None:
+                saman_values["title"] = _title
             if _discription != None:
                 saman_values['discription'] = _discription
-            else:
-                saman_values["description"] = ""
+            if _price != None:
+                saman_values['price'] = _price
+            if _brand != None:
+                saman_values['brand'] = _brand
+            if _tag != None:
+                saman_values['tag']   = _tag
             if _address != None:
                 saman_values['address'] = _address
-            else:
-                saman_values["address"] = ""
 
             query_update = { "$set": saman_values }
 
@@ -129,6 +121,10 @@ class editsaman(Resource):
                 print("could not able to update the info of saaman")
                 print("Exception", e)
                 return {"message": "Sorry due to some reason the information of your saman is not updated..!!"}
+
+        else:
+            return {'message': 'You cannot edit this saman'}
+
 
 class deletesaman(Resource):
     @jwt_required
@@ -161,10 +157,3 @@ class listallsaman(Resource):
             total_saman.append(i)
 
         return total_saman
-
-class singleSaman(Resource):
-    def get(self, id):
-        try:
-            return db.saman.find_one({"_id" : id})
-        except Exception as e:
-            return {'message':"error occured while loading, error is -> {} ".format(e)}
