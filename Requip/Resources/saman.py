@@ -47,8 +47,10 @@ class addSaman(Resource):
             im.save(file_loc)
             FileManagement.upload(post_img_path, file_loc)
             data['images'] = post_img_path
+            data['username'] = username
+            del data['image']
             os.remove(file_loc)
-            db.saman.insert_one(saman)
+            db.saman.insert_one(data)
             return {"message":"new post of saaman is created successfully..!!"}
         except:
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
