@@ -113,3 +113,17 @@ class listallsaman(Resource):
         for i in saman_list:
             total_saman.append(i)
         return total_saman
+
+class userSaman(Resource):
+    @jwt_required
+    def get(self):
+        user_saman = []
+        username = get_jwt_identity()
+        try:
+            query = {'username': username}
+            saman_list = db.saman.find(query)
+        except Exception as e:
+            return {'message':"error occured while loading, error is -> {} ".format(e)}
+        for i in saman_list:
+            user_saman.append(i)
+        return user_saman
