@@ -10,6 +10,7 @@ from Requip.azureStorage import FileManagement
 
 class UserRegistration(Resource):
     def post(self):
+        return {'message': 'Muh me le le'}
         parser = reqparse.RequestParser()
         parser.add_argument('username', help = 'This field cannot be blank', required = True)
         parser.add_argument('name', help = 'This field cannot be blank', required = True)
