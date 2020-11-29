@@ -56,13 +56,26 @@ class addSaman(Resource):
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class SingleSaman(Resource):
+
+    def get_identity_if_logedin(self):
+        try:
+            verify_jwt_in_request_optional()
+            return get_jwt_identity()
+        except Exception:
+            # this handles if the access tocken is wrong or expired, hence have to handle:-
+            pass
+
     def get(self, id):
+        logged_user = self.get_identity_if_logedin()
         item = db.saman.find_one({"_id" : id})
         if(item == None):
             return Response( '404 Not Found', status=404,)
         item['moneytized'] = 'priced'
         if(int(item['price']) == 0):
             item['moneytized'] = 'free'
+        # handline if user is loggedin or not to show phone number:-
+        if logged_user == None:
+            item["phone"] = "xxxxxxxxxx"
         return item
 
     @jwt_required
