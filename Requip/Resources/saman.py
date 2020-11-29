@@ -111,7 +111,7 @@ class listallsaman(Resource):
             to_get.update({'score': {'$meta': "textScore"}})
             saman_list = db.saman.find({"$text": {"$search": query}}, to_get,)
         else:
-            saman_list = db.saman.find(q_find, to_get )
+            saman_list = db.saman.find({}, to_get )
         for i in saman_list:
             total_saman.append(i)
         return total_saman
