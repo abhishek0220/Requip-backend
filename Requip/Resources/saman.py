@@ -5,7 +5,7 @@ import uuid, base64
 from io import BytesIO
 from PIL import Image
 import os
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, verify_jwt_in_request_optional)
 from Requip.azureStorage import FileManagement
 
 '''
@@ -103,7 +103,17 @@ class SingleSaman(Resource):
             return {"message" : "Post is not deleted successfully, error is -> {} ".format(e)}
 
 class listallsaman(Resource):
+
+    def get_identity_if_logedin(self):
+        try:
+            verify_jwt_in_request_optional()
+            return get_jwt_identity()
+        except Exception:
+            # this handles if the access tocken is wrong or expired, hence have to handle:-
+            pass
+
     def get(self):
+        logged_user = self.get_identity_if_logedin()
         total_saman = []
         try:
             skip = int(request.args.get('skip',0))
@@ -111,7 +121,10 @@ class listallsaman(Resource):
         except Exception as e:
             return {'message':"error occured while loading, error is -> {} ".format(e)}
         for i in saman_list:
+            if logged_user == None:
+                i["phone"] = "xxxxxxxxxx"
             total_saman.append(i)
+
         return total_saman
 
 class userSaman(Resource):
