@@ -22,6 +22,8 @@ class UserRegistration(Resource):
         password = data['password']
         name = data['name']
         phone_number = data['phone_number']
+        if( (username.isalnum() == False) or (len(email)<=15) or (email[-15:] != '@iitjammu.ac.in') or (phone_number.isnumeric() == False) or int(phone_number) < 6000000000 or int(phone_number) > 9999999999):
+            return {'message': 'invalid params'}
         if(db.users.find_one({'email': email}) or db.users.find_one({'username' : username})):
             return {'message': 'User already exists'}
         img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
@@ -81,6 +83,7 @@ class UserProfile(Resource):
         if (user != None):
             del user['_id']
             del user['password']
+            del user['phone']
             return user
         else:
             return {'message': 'User does not exists'}

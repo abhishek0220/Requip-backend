@@ -97,6 +97,7 @@ class SingleSaman(Resource):
         if(item == None):
             return {'message': 'You cannot edit this saman'}
         try:
+            FileManagement.delete(item['images'])
             db.saman.delete_one(query)
             return {"message" : "Your saaman's post has been deleted successfully..!!"}
         except Exception as e:
@@ -106,10 +107,16 @@ class listallsaman(Resource):
     def get(self):
         total_saman = []
         query = request.args.get('text', -1)
+        objType = request.args.get('type', -1)
         to_get = {'_id' : 1, 'images' : 1, 'title' : 1, 'type' : 1, 'price':1}
+        filterBy = {}
+        if(objType != -1 and objType != 'all'):
+            filterBy["type"] = objType
         if(query != -1):
             to_get.update({'score': {'$meta': "textScore"}})
-            saman_list = db.saman.find({"$text": {"$search": query}}, to_get,)
+            filterBy["$text"] = {"$search": query}
+        if(len(filterBy) > 0):
+            saman_list = db.saman.find(filterBy, to_get,)
         else:
             saman_list = db.saman.find({}, to_get )
         for i in saman_list:
