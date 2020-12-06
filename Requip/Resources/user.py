@@ -57,7 +57,7 @@ class UserRegistration(Resource):
                 'token' : tok_pre_en
             }
             tok_final = create_access_token(identity = identity, expires_delta= timedelta(minutes= 5))
-            token_url = 'http://localhost:4200/' + f'verify/{username}/{tok_final}'
+            token_url = os.getenv('FRONTEND') + f'/verify/{username}/{tok_final}'
             resp = render_template('verify.html', user_name = username, token = token_url)
             sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
             from_email = Email("requip@iamabhishek.live")
@@ -118,7 +118,7 @@ class UserReset(Resource):
             'token' : tok_pre_en
         }
         tok_final = create_access_token(identity = identity, expires_delta= timedelta(minutes= 5))
-        token_url = 'http://localhost:4200/' + f'reset/{username}/{tok_final}'
+        token_url = os.getenv('FRONTEND') + f'/reset/{username}/{tok_final}'
         resp = render_template('forget.html', user_name = username, token = token_url)
         sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
         from_email = Email("requip@iamabhishek.live")
