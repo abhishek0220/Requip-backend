@@ -161,7 +161,7 @@ class UserVerify(Resource):
         parser.add_argument('token', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
         token = data['token']
-        token_rev = decode_token(token, allow_expired=True)
+        token_rev = decode_token(token, allow_expired=False)
         user = db.users.find_one({'username':username}, {'_id' : 1, 'email':1, 'password':1, 'username':1, 'last_reset_request' : 1, 'last_reset' : 1 })
         if(user == None):
             return {'message': 'User does not exists'}
