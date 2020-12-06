@@ -1,11 +1,15 @@
 from flask_restful import Resource, reqparse, request
-from flask import Response
+from flask import Response, render_template
 from Requip import db
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+from flask_jwt_extended import (create_access_token, decode_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, jwt_optional)
 import os, shutil
-import base64, uuid
+import base64, uuid, time
+from datetime import datetime, timedelta 
 from io import BytesIO
 from PIL import Image
+from hashlib import sha256
+import sendgrid
+from sendgrid.helpers.mail import *
 from Requip.azureStorage import FileManagement
 
 class UserRegistration(Resource):
@@ -34,7 +38,10 @@ class UserRegistration(Resource):
             'password' : password,
             'phone' : phone_number,
             'image' : img_loc,
-            'about' : "My text by default"
+            'about' : "My text by default",
+            'isactive' : False,
+            'last_reset_request' : int(time.time()),
+            'last_reset' : int(time.time())
         }
         try:
             db.users.insert(user)
@@ -43,6 +50,22 @@ class UserRegistration(Resource):
         else:
             def_img = os.path.join(os.getenv('FILES'),'user.jpg')
             FileManagement.upload(img_loc,def_img)
+            tok_pre = bytes(username+user['password']+str(user['last_reset'])+str(user['last_reset_request']), 'ascii')
+            tok_pre_en = sha256(tok_pre).hexdigest()
+            identity = {
+                'username':username,
+                'token' : tok_pre_en
+            }
+            tok_final = create_access_token(identity = identity, expires_delta= timedelta(minutes= 5))
+            token_url = 'http://localhost:4200/' + f'verify/{username}/{tok_final}'
+            resp = render_template('verify.html', user_name = username, token = token_url)
+            sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+            from_email = Email("requip@iamabhishek.live")
+            to_email = To(user['email'])
+            subject = "Welcome to Requip"
+            content = Content("text/html", resp)
+            mail = Mail(from_email, to_email, subject, content)
+            response = sg.client.mail.send.post(request_body=mail.get())
             return {
             'message': 'User {} is created'.format(data['username']),
             'username' : f"{data['username']}"
@@ -59,7 +82,7 @@ class UserLogin(Resource):
         else:
             user = db.users.find_one({'username': data['id'] })
         if(user):
-            if(user['password'] == data['password']):
+            if(user['password'] == data['password'] and user.get('isactive', False)):
                 access_token = create_access_token(identity = user['username'])
                 refresh_token = create_refresh_token(identity = user['username'])
                 return {
@@ -73,9 +96,89 @@ class UserLogin(Resource):
                 print(user['name'] + user['username'])
                 print("yes")
             else:
-                return {'message': 'Invalid Credentials'}
+                return {'message': 'Invalid Credentials or account disabled'}
         else:
             return {'message': 'User does not exists'}
+
+class UserReset(Resource):
+    def get(self, username):
+        user = db.users.find_one({'username':username}, {'_id' : 1, 'email':1, 'password':1, 'username':1, 'last_reset_request' : 1, 'last_reset' : 1 })
+        if(user == None):
+            return {'message': 'User does not exists'}
+        last_req  = user.get('last_reset_request', 0)
+        last_rest = user.get('last_reset', 0)
+        curr_time = int(time.time())
+        if((curr_time - last_req) < 300 ):
+            return {'message': 'Please wait 5 min before making request again'}
+        db.users.update_one({'username':username}, { "$set": {'last_reset_request':curr_time} })
+        tok_pre = bytes(username+user['password']+str(last_rest)+str(curr_time), 'ascii')
+        tok_pre_en = sha256(tok_pre).hexdigest()
+        identity = {
+            'username':username,
+            'token' : tok_pre_en
+        }
+        tok_final = create_access_token(identity = identity, expires_delta= timedelta(minutes= 5))
+        token_url = 'http://localhost:4200/' + f'reset/{username}/{tok_final}'
+        resp = render_template('forget.html', user_name = username, token = token_url)
+        sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+        from_email = Email("requip@iamabhishek.live")
+        to_email = To(user['email'])
+        subject = "Reset Requip Password"
+        content = Content("text/html", resp)
+        mail = Mail(from_email, to_email, subject, content)
+        response = sg.client.mail.send.post(request_body=mail.get())
+        print(response)
+        return {'message': 'Email Sent'}
+
+    def post(self, username):
+        parser = reqparse.RequestParser()
+        parser.add_argument('token', help = 'This field cannot be blank', required = True)
+        parser.add_argument('password', help = 'This field cannot be blank', required = True)
+        data = parser.parse_args()
+        password = data.get('password', None)
+        token = data['token']
+        token_rev = decode_token(token, allow_expired=False)
+        user = db.users.find_one({'username':username}, {'_id' : 1, 'email':1, 'password':1, 'username':1, 'last_reset_request' : 1, 'last_reset' : 1 })
+        if(user == None):
+            return {'message': 'User does not exists'}
+        identity = token_rev['identity']
+        token = identity['token']
+        last_rest = user.get('last_reset',0)
+        curr_time = user.get('last_reset_request',0)
+        new_token = bytes(username+user['password']+str(last_rest)+str(curr_time), 'ascii')
+        new_token_en = sha256(new_token).hexdigest()
+        if(token != new_token_en):
+            return {'message': 'Invalid Token'}
+        curr_time = int(time.time())
+        toUpdate = {'last_reset':curr_time, 'isactive' : True}
+        toUpdate['password'] = password
+        db.users.update_one({'username':username}, { "$set": toUpdate })
+        return {'message': 'Success', 'status' : 200}
+
+class UserVerify(Resource):
+    def post(self, username):
+        parser = reqparse.RequestParser()
+        parser.add_argument('token', help = 'This field cannot be blank', required = True)
+        data = parser.parse_args()
+        token = data['token']
+        token_rev = decode_token(token, allow_expired=True)
+        user = db.users.find_one({'username':username}, {'_id' : 1, 'email':1, 'password':1, 'username':1, 'last_reset_request' : 1, 'last_reset' : 1 })
+        if(user == None):
+            return {'message': 'User does not exists'}
+        identity = token_rev['identity']
+        token = identity['token']
+        last_rest = user.get('last_reset',0)
+        curr_time = user.get('last_reset_request',0)
+        print(last_rest)
+        print(curr_time)
+        new_token = bytes(username+user['password']+str(last_rest)+str(curr_time), 'ascii')
+        new_token_en = sha256(new_token).hexdigest()
+        if(token != new_token_en):
+            return {'message': 'Invalid Token'}
+        curr_time = int(time.time())
+        toUpdate = {'last_reset':curr_time, 'isactive' : True}
+        db.users.update_one({'username':username}, { "$set": toUpdate })
+        return {'message': 'Success', 'status' : 200}
 
 class UserProfile(Resource):
     def get(self, username):
