@@ -127,14 +127,23 @@ class flagsaman(Resource):
             count = int(item["flag_count"])
         except :
             count = 0
+        try:
+            flag_users = item["flag_users"]
+        except:
+            flag_users = []
+        if username not in flag_users:
+            flag_users.append(username)
+        else:
+            return {"message": "Your have already flagged this saman"}
+        # setting query to find the particular saman:-
         query = {"_id": id}
-        query_update = { "$set": {"flag_count": count+1 } }
+        query_update = { "$set": {"flag_count": count+1, "flag_users": flag_users } }
         # handling if the flag is reached certain threshold flag to review by developers.
         if((count+1) >= 10):
             print("This saman is flagged above 10")
         try:
             db.saman.update_one(query, query_update)
-            return {"message" : "This saman is flagged"}
+            return {"message" : "Saaman flagged!"}
         except Exception as e:
             return {"message": "error occured while flagging"}
 
