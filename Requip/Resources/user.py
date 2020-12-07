@@ -11,8 +11,12 @@ from hashlib import sha256
 import sendgrid
 from sendgrid.helpers.mail import *
 from Requip.azureStorage import FileManagement
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from Requip import limiter
 
 class UserRegistration(Resource):
+    decorators = [limiter.limit("5/second")]
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('username', help = 'This field cannot be blank', required = True)
@@ -72,6 +76,7 @@ class UserRegistration(Resource):
             }
 
 class UserLogin(Resource):
+    decorators = [limiter.limit("5/second")]
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('id', help = 'This field cannot be blank', required = True)
@@ -101,6 +106,10 @@ class UserLogin(Resource):
             return {'message': 'User does not exists'}
 
 class UserReset(Resource):
+    decorators = [
+        limiter.limit("1/second", methods=["GET"]),
+        limiter.limit("1/second", methods=["POST"])
+    ]
     def get(self, username):
         user = db.users.find_one({'username':username}, {'_id' : 1, 'email':1, 'password':1, 'username':1, 'last_reset_request' : 1, 'last_reset' : 1 })
         if(user == None):
@@ -156,6 +165,9 @@ class UserReset(Resource):
         return {'message': 'Success', 'status' : 200}
 
 class UserVerify(Resource):
+    decorators = [
+        limiter.limit("1/second", methods=["POST"])
+    ]
     def post(self, username):
         parser = reqparse.RequestParser()
         parser.add_argument('token', help = 'This field cannot be blank', required = True)
@@ -181,6 +193,7 @@ class UserVerify(Resource):
         return {'message': 'Success', 'status' : 200}
 
 class UserProfile(Resource):
+    decorators = [limiter.limit("5/second")]
     def get(self, username):
         user = db.users.find_one({'username': username})
         if (user != None):
@@ -192,6 +205,9 @@ class UserProfile(Resource):
             return {'message': 'User does not exists'}
 
 class ChangeProfilePic(Resource):
+    decorators = [
+        limiter.limit("5/minute", methods=["POST"])
+    ]
     @jwt_required
     def post(self):
         username = get_jwt_identity()
@@ -221,6 +237,9 @@ class ChangeProfilePic(Resource):
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class UserProfileUpdate(Resource):
+    decorators = [
+        limiter.limit("1/second", methods=["POST"])
+    ]
     @jwt_required
     def post(self):
         _user = get_jwt_identity()
@@ -250,6 +269,7 @@ class UserProfileUpdate(Resource):
             return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
 
 class User(Resource):
+    decorators = [limiter.limit("5/second", key_func=get_jwt_identity)]
     @jwt_required
     def get(self):
         username = get_jwt_identity()
@@ -262,6 +282,9 @@ class User(Resource):
             return {'message': 'User does not exists'}
 
 class TokenRefresh(Resource):
+    decorators = [
+        limiter.limit("5/second", methods=["POST"])
+    ]
     @jwt_refresh_token_required
     def post(self):
         current_user = get_jwt_identity()

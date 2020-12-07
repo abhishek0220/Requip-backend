@@ -5,6 +5,10 @@ import uuid, base64
 from io import BytesIO
 from PIL import Image
 import os, json
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from Requip import limiter
+
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, verify_jwt_in_request_optional)
 from Requip.azureStorage import FileManagement
 from azure.cognitiveservices.vision.computervision import ComputerVisionClient
@@ -29,6 +33,9 @@ def getTags(link):
     return arr
 
 class addSaman(Resource):
+    decorators = [
+        limiter.limit("1/second", key_func=get_jwt_identity, methods=["POST"])
+    ]
     @jwt_required
     def post(self):
         username = get_jwt_identity()
@@ -68,7 +75,11 @@ class addSaman(Resource):
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class SingleSaman(Resource):
-
+    decorators = [
+        limiter.limit("1/second",  methods=["GET"]),
+        limiter.limit("1/second", key_func=get_jwt_identity, methods=["POST"]),
+        limiter.limit("1/second", key_func=get_jwt_identity, methods=["DELETE"])
+    ]
     def get_identity_if_logedin(self):
         try:
             verify_jwt_in_request_optional()
@@ -129,6 +140,7 @@ class SingleSaman(Resource):
             return {"message" : "Post is not deleted successfully, error is -> {} ".format(e)}
 
 class listallsaman(Resource):
+    decorators = [limiter.limit("5/second",  methods=["GET"]),]
     def get(self):
         total_saman = []
         query = request.args.get('text', -1)
@@ -151,6 +163,7 @@ class listallsaman(Resource):
         return total_saman
 
 class userSaman(Resource):
+    decorators = [limiter.limit("5/second",  methods=["GET"]),]
     @jwt_required
     def get(self):
         user_saman = []
