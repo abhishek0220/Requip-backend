@@ -1,15 +1,21 @@
 from flask import Flask, url_for
-from flask_restful import Api
+from flask_restful import Api, Resource
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS, cross_origin
 import os, shutil
 from flask_pymongo import PyMongo
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 cors = CORS(app)
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["10 per second",]
+)
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
-
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 app.config['PROPAGATE_EXCEPTIONS'] = True
 jwt = JWTManager(app)
@@ -19,7 +25,6 @@ db = mongo.db
 @app.route('/')
 def hdfd():
     return "Running..."
-
 
 from Requip.Resources import user, saman
 api.add_resource(user.UserRegistration, '/registration')

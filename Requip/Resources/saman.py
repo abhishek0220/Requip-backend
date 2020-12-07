@@ -5,8 +5,17 @@ import uuid, base64
 from io import BytesIO
 from PIL import Image
 import os, json
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from Requip import limiter
+
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, verify_jwt_in_request_optional)
 from Requip.azureStorage import FileManagement
+from azure.cognitiveservices.vision.computervision import ComputerVisionClient
+from msrest.authentication import CognitiveServicesCredentials
+
+endpoint, subscription_key = os.getenv('AZURE_COMPUTER_VISION').split(';')
+computervision_client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
 
 '''
 contains four methods for saman
@@ -15,9 +24,18 @@ contains four methods for saman
 3. to edit the advertisement for saman
 4. to return list of all saman advertisement
 '''
-
+def getTags(link):
+    complete_img_url = "https://abhisprojects.blob.core.windows.net/requip/" + link
+    tags_result_remote = computervision_client.tag_image(complete_img_url )
+    arr = []
+    for tag in tags_result_remote.tags:
+        arr.append(tag.name)
+    return arr
 
 class addSaman(Resource):
+    decorators = [
+        limiter.limit("1/second", key_func=get_jwt_identity, methods=["POST"])
+    ]
     @jwt_required
     def post(self):
         username = get_jwt_identity()
@@ -50,13 +68,18 @@ class addSaman(Resource):
             data['username'] = username
             del data['image']
             os.remove(file_loc)
+            data['tags'] = getTags(post_img_path)
             db.saman.insert_one(data)
             return {"message":"new post of saaman is created successfully..!!"}
         except:
             return Response("{'message': 'Invalid image'}", status=403, mimetype='application/json')
 
 class SingleSaman(Resource):
-
+    decorators = [
+        limiter.limit("1/second",  methods=["GET"]),
+        limiter.limit("1/second", key_func=get_jwt_identity, methods=["POST"]),
+        limiter.limit("1/second", key_func=get_jwt_identity, methods=["DELETE"])
+    ]
     def get_identity_if_logedin(self):
         try:
             verify_jwt_in_request_optional()
@@ -98,7 +121,7 @@ class SingleSaman(Resource):
             except Exception as e:
                 print("could not able to update the info of saaman")
                 print("Exception", e)
-                return Response("{'message': 'Sorry due to some reason the information of your saman is not updated..!!'}", status=403, mimetype='application/json')
+                return Response("{'message': 'Sorry due to some reason the information of your saman is not updated..!!'}", status=504, mimetype='application/json')
         else:
             return Response("{'message': 'You cannot edit this saman'}", status=403, mimetype='application/json')
 
@@ -123,22 +146,27 @@ class flagsaman(Resource):
         item = db.saman.find_one({"_id" : id})
         if(item == None):
             return Response( '404 Not Found', status=404,)
-        try:
-            count = int(item["flag_count"])
-        except :
-            count = 0
+        count = int(item.get("flag_count",0))
+        flag_users = item.get("flag_users",[])
+        if username not in flag_users:
+            flag_users.append(username)
+            newcount = count + 1
+        else:
+            return {"message": "Your have already flagged this saman"}
+        # setting query to find the particular saman:-
         query = {"_id": id}
-        query_update = { "$set": {"flag_count": count+1 } }
+        query_update = { "$set": {"flag_count": newcount, "flag_users": flag_users } }
         # handling if the flag is reached certain threshold flag to review by developers.
-        if((count+1) >= 10):
+        if((newcount) >= 10):
             print("This saman is flagged above 10")
         try:
             db.saman.update_one(query, query_update)
-            return {"message" : "This saman is flagged"}
+            return {"message" : "Saaman flagged!"}
         except Exception as e:
             return {"message": "error occured while flagging"}
 
 class listallsaman(Resource):
+    decorators = [limiter.limit("5/second",  methods=["GET"]),]
     def get(self):
         total_saman = []
         query = request.args.get('text', -1)
@@ -161,6 +189,7 @@ class listallsaman(Resource):
         return total_saman
 
 class userSaman(Resource):
+    decorators = [limiter.limit("5/second",  methods=["GET"]),]
     @jwt_required
     def get(self):
         user_saman = []
