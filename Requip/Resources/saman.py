@@ -139,6 +139,32 @@ class SingleSaman(Resource):
         except Exception as e:
             return {"message" : "Post is not deleted successfully, error is -> {} ".format(e)}
 
+class flagsaman(Resource):
+    @jwt_required
+    def post(self, id):
+        username = get_jwt_identity()
+        item = db.saman.find_one({"_id" : id})
+        if(item == None):
+            return Response( '404 Not Found', status=404,)
+        count = int(item.get("flag_count",0))
+        flag_users = item.get("flag_users",[])
+        if username not in flag_users:
+            flag_users.append(username)
+            newcount = count + 1
+        else:
+            return {"message": "Your have already flagged this saman"}
+        # setting query to find the particular saman:-
+        query = {"_id": id}
+        query_update = { "$set": {"flag_count": newcount, "flag_users": flag_users } }
+        # handling if the flag is reached certain threshold flag to review by developers.
+        if((newcount) >= 10):
+            print("This saman is flagged above 10")
+        try:
+            db.saman.update_one(query, query_update)
+            return {"message" : "Saaman flagged!"}
+        except Exception as e:
+            return {"message": "error occured while flagging"}
+
 class listallsaman(Resource):
     decorators = [limiter.limit("5/second",  methods=["GET"]),]
     def get(self):
