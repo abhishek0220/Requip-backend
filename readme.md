@@ -23,6 +23,10 @@
 
 ```
 MONGODB_URI = <token>
+STORAGE = <azure_storage_token>
+SENDGRID_API_KEY = <sendgrid_token>
+FRONTEND = <frontend_location>
+AZURE_COMPUTER_VISION = <Azure computer vision endpoint and key seperated by ; >
 ```
 7. Create System Var `$env:FLASK_APP="application.py"`, `$env:FLASK_DEBUG=1` using terminal.
 8. Enter `flask run` to create server.
