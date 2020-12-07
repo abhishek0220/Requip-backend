@@ -7,6 +7,11 @@ from PIL import Image
 import os, json
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, verify_jwt_in_request_optional)
 from Requip.azureStorage import FileManagement
+from azure.cognitiveservices.vision.computervision import ComputerVisionClient
+from msrest.authentication import CognitiveServicesCredentials
+
+endpoint, subscription_key = os.getenv('AZURE_COMPUTER_VISION').split(';')
+computervision_client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
 
 '''
 contains four methods for saman
@@ -15,7 +20,13 @@ contains four methods for saman
 3. to edit the advertisement for saman
 4. to return list of all saman advertisement
 '''
-
+def getTags(link):
+    complete_img_url = "https://abhisprojects.blob.core.windows.net/requip/" + link
+    tags_result_remote = computervision_client.tag_image(complete_img_url )
+    arr = []
+    for tag in tags_result_remote.tags:
+        arr.append(tag.name)
+    return arr
 
 class addSaman(Resource):
     @jwt_required
@@ -50,6 +61,7 @@ class addSaman(Resource):
             data['username'] = username
             del data['image']
             os.remove(file_loc)
+            data['tags'] = getTags(post_img_path)
             db.saman.insert_one(data)
             return {"message":"new post of saaman is created successfully..!!"}
         except:
