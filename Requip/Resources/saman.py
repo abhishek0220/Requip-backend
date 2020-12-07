@@ -145,8 +145,10 @@ class listallsaman(Resource):
         objType = request.args.get('type', -1)
         to_get = {'_id' : 1, 'images' : 1, 'title' : 1, 'type' : 1, 'price':1}
         filterBy = {}
-        if(objType != -1 and objType != 'all'):
-            filterBy["type"] = objType
+        obj_Arr = []
+        if(objType != -1):
+            obj_Arr = objType.split(',')
+        filterBy['type'] = {'$in' : obj_Arr}
         if(query != -1):
             to_get.update({'score': {'$meta': "textScore"}})
             filterBy["$text"] = {"$search": query}
