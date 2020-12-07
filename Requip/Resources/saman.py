@@ -110,7 +110,7 @@ class SingleSaman(Resource):
             except Exception as e:
                 print("could not able to update the info of saaman")
                 print("Exception", e)
-                return Response("{'message': 'Sorry due to some reason the information of your saman is not updated..!!'}", status=403, mimetype='application/json')
+                return Response("{'message': 'Sorry due to some reason the information of your saman is not updated..!!'}", status=504, mimetype='application/json')
         else:
             return Response("{'message': 'You cannot edit this saman'}", status=403, mimetype='application/json')
 
