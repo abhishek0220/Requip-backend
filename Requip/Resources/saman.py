@@ -123,14 +123,8 @@ class flagsaman(Resource):
         item = db.saman.find_one({"_id" : id})
         if(item == None):
             return Response( '404 Not Found', status=404,)
-        try:
-            count = int(item["flag_count"])
-        except :
-            count = 0
-        try:
-            flag_users = item["flag_users"]
-        except:
-            flag_users = []
+        count = int(item.get("flag_count",0))
+        flag_users = item.get("flag_users",[])
         if username not in flag_users:
             flag_users.append(username)
             newcount = count + 1
