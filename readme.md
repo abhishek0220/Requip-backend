@@ -38,8 +38,4 @@ AZURE_COMPUTER_VISION = <Azure computer vision endpoint and key seperated by ; >
 7. Create System Var `$env:FLASK_APP="application.py"`, `$env:FLASK_DEBUG=1` using terminal.
 8. Enter `flask run` to create server.
 9. Push the changes in a separate branch and create a pull request. After the PR is merged, it will be automatically deployed to Azure App Service via Github Actions.
-<<<<<<< HEAD
-=======
 
-
->>>>>>> b5fa3fe1b02c31725667d350e68791b72c8f8ed3
