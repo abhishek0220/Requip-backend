@@ -3,7 +3,13 @@
 
 Requip is a buy and sell ecommerce website for the people of Indian Institute of Technology Jammu. Requip website is powered by Requip Backend APIs.
 
+# API Documentation
 
+## Authentication
+Access to the Requip API is granted by JWT access token. To get access token you have to provide your username and password. The username and password used, is the same username and password you use to access the Recuip web or app interface. See **User APIs** for authentication API
+
+- **[User APIs](/docs/user.md)**
+- **[Saman APIs](/docs/saman.md)**
 
 ## Technology stack
 
@@ -32,13 +38,3 @@ AZURE_COMPUTER_VISION = <Azure computer vision endpoint and key seperated by ; >
 7. Create System Var `$env:FLASK_APP="application.py"`, `$env:FLASK_DEBUG=1` using terminal.
 8. Enter `flask run` to create server.
 9. Push the changes in a separate branch and create a pull request. After the PR is merged, it will be automatically deployed to Azure App Service via Github Actions.
-<br>
-<br>
-# API Documentation
-
-## Authentication
-Access to the Requip API is granted by JWT access token. To get access token you have to provide your username and password. The username and password used, is the same username and password you use to access the Recuip web or app interface. See **User APIs** for authentication API
-
-- **[User APIs](/docs/user.md)**
-- **[Saman APIs](/docs/saman.md)**
-

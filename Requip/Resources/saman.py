@@ -166,6 +166,7 @@ class listallsaman(Resource):
         total_saman = []
         query = request.args.get('text', -1)
         objType = request.args.get('type', -1)
+        limit = int(request.args.get('limit', -1))
         to_get = {'_id' : 1, 'images' : 1, 'title' : 1, 'type' : 1, 'price':1}
         filterBy = {}
         obj_Arr = []
@@ -175,10 +176,11 @@ class listallsaman(Resource):
         if(query != -1):
             to_get.update({'score': {'$meta': "textScore"}})
             filterBy["$text"] = {"$search": query}
-        if(len(filterBy) > 0):
-            saman_list = db.saman.find(filterBy, to_get,)
+
+        if(limit != -1):
+            saman_list = db.saman.find(filterBy, to_get,).limit(limit)
         else:
-            saman_list = db.saman.find({}, to_get )
+            saman_list = db.saman.find(filterBy, to_get,)
         for i in saman_list:
             total_saman.append(i)
         return total_saman
