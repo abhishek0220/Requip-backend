@@ -36,7 +36,7 @@ def getTags(link):
 
 class addSaman(Resource):
     decorators = [
-        limiter.limit("1/second; 2/minute", key_func=get_user_id_with_jwt, methods=["POST"])
+        limiter.limit("1/second; 10/minute", key_func=get_user_id_with_jwt, methods=["POST"])
     ]
     @jwt_required
     def post(self):
