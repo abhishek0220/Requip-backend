@@ -115,6 +115,7 @@ class SingleSaman(Resource):
         parser.add_argument('phone', help = 'This field can be blank', required = True)
         data = parser.parse_args()
         query = {'username': username, "_id": id}
+        data['type'] = data['type'].lower()
         if (db.saman.find_one(query)):
             query_update = { "$set": data }
             try:
