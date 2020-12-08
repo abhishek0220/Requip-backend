@@ -14,6 +14,7 @@ from Requip.azureStorage import FileManagement
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from Requip import limiter
+from Requip.Resources.extra import get_user_id_with_jwt
 
 class UserRegistration(Resource):
     decorators = [limiter.limit("5/second")]
@@ -25,8 +26,8 @@ class UserRegistration(Resource):
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         parser.add_argument('phone_number', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
-        username = data['username']
-        email = data['email']
+        username = data['username'].lower()
+        email = data['email'].lower()
         password = data['password']
         name = data['name']
         phone_number = data['phone_number']
@@ -83,9 +84,9 @@ class UserLogin(Resource):
         parser.add_argument('password', help = 'This field cannot be blank', required = True)
         data = parser.parse_args()
         if('@' in data['id']):
-            user = db.users.find_one({'email': data['id'] })
+            user = db.users.find_one({'email': data['id'].lower() })
         else:
-            user = db.users.find_one({'username': data['id'] })
+            user = db.users.find_one({'username': data['id'].lower() })
         if(user):
             if(user['password'] == data['password'] and user.get('isactive', False)):
                 access_token = create_access_token(identity = user['username'])
@@ -111,6 +112,7 @@ class UserReset(Resource):
         limiter.limit("1/second", methods=["POST"])
     ]
     def get(self, username):
+        username = username.lower()
         user = db.users.find_one({'username':username}, {'_id' : 1, 'email':1, 'password':1, 'username':1, 'last_reset_request' : 1, 'last_reset' : 1 })
         if(user == None):
             return {'message': 'User does not exists'}
@@ -195,7 +197,7 @@ class UserVerify(Resource):
 class UserProfile(Resource):
     decorators = [limiter.limit("5/second")]
     def get(self, username):
-        user = db.users.find_one({'username': username})
+        user = db.users.find_one({'username': username.lower()})
         if (user != None):
             del user['_id']
             del user['password']
@@ -206,7 +208,7 @@ class UserProfile(Resource):
 
 class ChangeProfilePic(Resource):
     decorators = [
-        limiter.limit("5/minute", methods=["POST"])
+        limiter.limit("5/minute", key_func=get_user_id_with_jwt ,methods=["POST"])
     ]
     @jwt_required
     def post(self):
@@ -238,7 +240,7 @@ class ChangeProfilePic(Resource):
 
 class UserProfileUpdate(Resource):
     decorators = [
-        limiter.limit("1/second", methods=["POST"])
+        limiter.limit("1/second", key_func=get_user_id_with_jwt, methods=["POST"])
     ]
     @jwt_required
     def post(self):
@@ -269,7 +271,7 @@ class UserProfileUpdate(Resource):
             return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
 
 class User(Resource):
-    decorators = [limiter.limit("5/second", key_func=get_jwt_identity)]
+    decorators = [limiter.limit("5/second", key_func=get_user_id_with_jwt)]
     @jwt_required
     def get(self):
         username = get_jwt_identity()

@@ -5,9 +5,11 @@ import uuid, base64
 from io import BytesIO
 from PIL import Image
 import os, json
+import pprint
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from Requip import limiter
+from Requip.Resources.extra import get_user_id_with_jwt
 
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt, verify_jwt_in_request_optional)
 from Requip.azureStorage import FileManagement
@@ -34,7 +36,7 @@ def getTags(link):
 
 class addSaman(Resource):
     decorators = [
-        limiter.limit("1/second", key_func=get_jwt_identity, methods=["POST"])
+        limiter.limit("1/second; 10/minute", key_func=get_user_id_with_jwt, methods=["POST"])
     ]
     @jwt_required
     def post(self):
@@ -76,9 +78,9 @@ class addSaman(Resource):
 
 class SingleSaman(Resource):
     decorators = [
-        limiter.limit("1/second",  methods=["GET"]),
-        limiter.limit("1/second", key_func=get_jwt_identity, methods=["POST"]),
-        limiter.limit("1/second", key_func=get_jwt_identity, methods=["DELETE"])
+        limiter.limit("5/second",  methods=["GET"]),
+        limiter.limit("1/second;6/minute", key_func=get_user_id_with_jwt, methods=["POST"]),
+        limiter.limit("1/second;12/minute", key_func=get_user_id_with_jwt, methods=["DELETE"])
     ]
     def get_identity_if_logedin(self):
         try:
@@ -113,6 +115,7 @@ class SingleSaman(Resource):
         parser.add_argument('phone', help = 'This field can be blank', required = True)
         data = parser.parse_args()
         query = {'username': username, "_id": id}
+        data['type'] = data['type'].lower()
         if (db.saman.find_one(query)):
             query_update = { "$set": data }
             try:
@@ -140,28 +143,21 @@ class SingleSaman(Resource):
             return {"message" : "Post is not deleted successfully, error is -> {} ".format(e)}
 
 class flagsaman(Resource):
+    decorators = [limiter.limit("1/second;3/minute", key_func=get_user_id_with_jwt, methods=["POST"])]
     @jwt_required
     def post(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('reason', help = 'This field cannot be blank', required = True)
+        data = parser.parse_args()
         username = get_jwt_identity()
-        item = db.saman.find_one({"_id" : id})
+        item = db.saman.find_one({"_id" : id},{'_id':1, 'flaged_by':1})
         if(item == None):
-            return Response( '404 Not Found', status=404,)
-        count = int(item.get("flag_count",0))
-        flag_users = item.get("flag_users",[])
-        if username not in flag_users:
-            flag_users.append(username)
-            newcount = count + 1
-        else:
-            return {"message": "Your have already flagged this saman"}
-        # setting query to find the particular saman:-
-        query = {"_id": id}
-        query_update = { "$set": {"flag_count": newcount, "flag_users": flag_users } }
-        # handling if the flag is reached certain threshold flag to review by developers.
-        if((newcount) >= 10):
-            print("This saman is flagged above 10")
+            return Response( '404 Not Found', status=404)
+        if(username in item.get('flaged_by',{})):
+            return {"message": "Your have already flagged this object"}
         try:
-            db.saman.update_one(query, query_update)
-            return {"message" : "Saaman flagged!"}
+            db.saman.update_one({'_id':id},{'$set':{'flaged_by' : {username : data['reason']}}})
+            return {"message" : "Object flagged!"}
         except Exception as e:
             return {"message": "error occured while flagging"}
 
@@ -171,6 +167,7 @@ class listallsaman(Resource):
         total_saman = []
         query = request.args.get('text', -1)
         objType = request.args.get('type', -1)
+        limit = int(request.args.get('limit', -1))
         to_get = {'_id' : 1, 'images' : 1, 'title' : 1, 'type' : 1, 'price':1}
         filterBy = {}
         obj_Arr = []
@@ -180,10 +177,11 @@ class listallsaman(Resource):
         if(query != -1):
             to_get.update({'score': {'$meta': "textScore"}})
             filterBy["$text"] = {"$search": query}
-        if(len(filterBy) > 0):
-            saman_list = db.saman.find(filterBy, to_get,)
+
+        if(limit != -1):
+            saman_list = db.saman.find(filterBy, to_get,).limit(limit)
         else:
-            saman_list = db.saman.find({}, to_get )
+            saman_list = db.saman.find(filterBy, to_get,)
         for i in saman_list:
             total_saman.append(i)
         return total_saman
