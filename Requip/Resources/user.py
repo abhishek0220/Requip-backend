@@ -14,6 +14,7 @@ from Requip.azureStorage import FileManagement
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from Requip import limiter
+from Requip.Resources.extra import get_user_id_with_jwt
 
 class UserRegistration(Resource):
     decorators = [limiter.limit("5/second")]
@@ -206,7 +207,7 @@ class UserProfile(Resource):
 
 class ChangeProfilePic(Resource):
     decorators = [
-        limiter.limit("5/minute", methods=["POST"])
+        limiter.limit("5/minute", key_func=get_user_id_with_jwt ,methods=["POST"])
     ]
     @jwt_required
     def post(self):
@@ -238,7 +239,7 @@ class ChangeProfilePic(Resource):
 
 class UserProfileUpdate(Resource):
     decorators = [
-        limiter.limit("1/second", methods=["POST"])
+        limiter.limit("1/second", key_func=get_user_id_with_jwt, methods=["POST"])
     ]
     @jwt_required
     def post(self):
@@ -269,7 +270,7 @@ class UserProfileUpdate(Resource):
             return Response("{'message': 'User not exist'}", status=404, mimetype='application/json')
 
 class User(Resource):
-    decorators = [limiter.limit("5/second", key_func=get_jwt_identity)]
+    decorators = [limiter.limit("5/second", key_func=get_user_id_with_jwt)]
     @jwt_required
     def get(self):
         username = get_jwt_identity()
