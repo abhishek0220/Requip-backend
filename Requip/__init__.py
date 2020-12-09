@@ -12,7 +12,7 @@ cors = CORS(app)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["0 per second",]
+    default_limits=["1 per minute",]
 )
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
@@ -24,7 +24,7 @@ db = mongo.db
 
 @app.route('/')
 def hdfd():
-    return "Running..."
+    return f"Running... {get_remote_address()}"
 
 from Requip.Resources import user, saman
 api.add_resource(user.UserRegistration, '/registration')
