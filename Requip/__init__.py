@@ -12,7 +12,7 @@ cors = CORS(app)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["1 per minute",]
+    default_limits=["5 per second",]
 )
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
