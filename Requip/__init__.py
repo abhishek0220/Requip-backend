@@ -16,7 +16,7 @@ limiter = Limiter(
 )
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
-app.config['JWT_SECRET_KEY'] = os.getenv('FLASK_JWT') 
+app.config['JWT_SECRET_KEY'] = os.getenv('FLASK_JWT')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 jwt = JWTManager(app)
 mongo = PyMongo(app)
@@ -26,7 +26,7 @@ db = mongo.db
 def hdfd():
     return f"Running... {get_remote_address()}"
 
-from Requip.Resources import user, saman
+from Requip.Resources import user, saman, entertainment
 api.add_resource(user.UserRegistration, '/registration')
 api.add_resource(user.UserLogin, '/login')
 api.add_resource(user.UserProfile, '/profile/<string:username>')
@@ -41,3 +41,5 @@ api.add_resource(saman.SingleSaman, '/saman/<string:id>')
 api.add_resource(saman.listallsaman, '/saman')
 api.add_resource(saman.userSaman, '/myposts')
 api.add_resource(saman.flagsaman, '/flag/<string:id>')
+# entertainment
+api.add_resource(entertainment.addEntertainmentrResource, '/entertainment/add')
