@@ -12,11 +12,11 @@ cors = CORS(app)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["0 per second",]
+    default_limits=["5 per second",]
 )
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
-app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+app.config['JWT_SECRET_KEY'] = os.getenv('FLASK_JWT') 
 app.config['PROPAGATE_EXCEPTIONS'] = True
 jwt = JWTManager(app)
 mongo = PyMongo(app)
@@ -24,7 +24,7 @@ db = mongo.db
 
 @app.route('/')
 def hdfd():
-    return "Running..."
+    return f"Running... {get_remote_address()}"
 
 from Requip.Resources import user, saman
 api.add_resource(user.UserRegistration, '/registration')

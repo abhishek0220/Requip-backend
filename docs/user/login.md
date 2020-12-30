@@ -1,6 +1,7 @@
-# Registration
-    POST <ENDPOINT>/registration
+# Login
+    POST <ENDPOINT>/login
 Ratelimited `5/sec per Remote Address`
+
 
 ## Parameters
 ### URI Parameters
@@ -8,16 +9,13 @@ None
 ### Body Parameters
 Field | Required | Description
 --- | --- | ---
-username | Y | Unique account name
-name | Y | Your Name
-email | Y | IIT Jammu Email ID
-phone_number | Y | Your phone number
+username | Y | Username for your account
 password | Y | Password for your account
 
 ## Example
 ### Request
 
-    POST https://requip.azurewebsites.net/registration
+    POST https://requip.azurewebsites.net/login
 
 #### Request Headers
 ```json
@@ -27,9 +25,6 @@ password | Y | Password for your account
 ```json
 {
     "username": "abhishek0220",
-    "name":"Abhishek",
-    "email":"2018ucs0087@iitjammu.ac.in",
-    "phone":<MOBILE>,
     "password":<PASSWORD>
 }
 ```
@@ -37,7 +32,11 @@ password | Y | Password for your account
 ### Response   
 ```json
 {
-    "message": "User abhishek0220 is created",
-    "username" : "abhishek0220"
+    "message": "Logging in User abhishek0220",
+    "name": "Abhishek",
+    "image": "abhishek0220/d91c887f-8ac2-4620-be15-cb4ad4f0e237.jpg",
+    "username":"abhishek0220",
+    "access_token":<JWT_ACCESS_TOKEN>,
+    "refresh_token": <JWT_REFRESH_TOKEN>
 }
 ```
