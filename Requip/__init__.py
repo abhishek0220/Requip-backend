@@ -16,7 +16,7 @@ limiter = Limiter(
 )
 api = Api(app)
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
-app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+app.config['JWT_SECRET_KEY'] = os.getenv('FLASK_JWT') 
 app.config['PROPAGATE_EXCEPTIONS'] = True
 jwt = JWTManager(app)
 mongo = PyMongo(app)
