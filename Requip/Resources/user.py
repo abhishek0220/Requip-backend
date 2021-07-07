@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from PIL import Image
 from hashlib import sha256
-import sendgrid
-from sendgrid.helpers.mail import *
+# import sendgrid
+# from sendgrid.helpers.mail import *
 from Requip.azureStorage import FileManagement
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -61,6 +61,9 @@ class UserRegistration(Resource):
                 'username':username,
                 'token' : tok_pre_en
             }
+            # disabled email feature because of send-grid limitations
+            # You can turn it on 
+            """
             tok_final = create_access_token(identity = identity, expires_delta= timedelta(minutes= 5))
             token_url = os.getenv('FRONTEND') + f'/verify/{username}/{tok_final}'
             resp = render_template('verify.html', user_name = username, token = token_url)
@@ -71,6 +74,7 @@ class UserRegistration(Resource):
             content = Content("text/html", resp)
             mail = Mail(from_email, to_email, subject, content)
             response = sg.client.mail.send.post(request_body=mail.get())
+            """
             return {
             'message': 'User {} is created'.format(data['username']),
             'username' : f"{data['username']}"
@@ -128,6 +132,8 @@ class UserReset(Resource):
             'username':username,
             'token' : tok_pre_en
         }
+        # disabled email feature because of send-grid limitations
+        """
         tok_final = create_access_token(identity = identity, expires_delta= timedelta(minutes= 5))
         token_url = os.getenv('FRONTEND') + f'/reset/{username}/{tok_final}'
         resp = render_template('forget.html', user_name = username, token = token_url)
@@ -139,6 +145,7 @@ class UserReset(Resource):
         mail = Mail(from_email, to_email, subject, content)
         response = sg.client.mail.send.post(request_body=mail.get())
         print(response)
+        """
         return {'message': 'Email Sent'}
 
     def post(self, username):
