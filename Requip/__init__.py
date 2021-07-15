@@ -26,7 +26,8 @@ db = mongo.db
 def hdfd():
     return f"Running... {get_remote_address()}"
 
-from Requip.Resources import user, saman
+from Requip.Resources import user, saman, twq
+api.add_resource(twq.GetAUTHID, '/auth-id')
 api.add_resource(user.UserRegistration, '/registration')
 api.add_resource(user.UserLogin, '/login')
 api.add_resource(user.UserProfile, '/profile/<string:username>')

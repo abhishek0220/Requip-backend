@@ -14,6 +14,7 @@ from Requip.azureStorage import FileManagement
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from Requip import limiter
+from Requip.Resources.twq import twqgetUser
 from Requip.Resources.extra import get_user_id_with_jwt
 
 class UserRegistration(Resource):
@@ -80,19 +81,34 @@ class UserRegistration(Resource):
             'username' : f"{data['username']}"
             }
 
+
 class UserLogin(Resource):
     decorators = [limiter.limit("5/second")]
     def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('id', help = 'This field cannot be blank', required = True)
-        parser.add_argument('password', help = 'This field cannot be blank', required = True)
-        data = parser.parse_args()
-        if('@' in data['id']):
+        other_login = False
+        loginvia = request.args.get('use','')
+        
+        if loginvia.lower() == 'twq':
+            parser = reqparse.RequestParser()
+            parser.add_argument('response_qr', help = 'This field cannot be blank', required = True)
+            data = parser.parse_args()
+            user_got = twqgetUser(data['response_qr'])
+            if user_got is None or 'email' not in user_got:
+                return {'message': 'Invalid scopes or token'}
+            data['id'] = user_got['email']
+            other_login = True
+        else:
+            parser = reqparse.RequestParser()
+            parser.add_argument('id', help = 'This field cannot be blank', required = True)
+            parser.add_argument('password', help = 'This field cannot be blank', required = True)
+            data = parser.parse_args()
+        
+        if '@' in data['id']:
             user = db.users.find_one({'email': data['id'].lower() })
         else:
             user = db.users.find_one({'username': data['id'].lower() })
         if(user):
-            if(user['password'] == data['password'] and user.get('isactive', False)):
+            if other_login or (user['password'] == data['password'] and user.get('isactive', False)):
                 access_token = create_access_token(identity = user['username'])
                 refresh_token = create_refresh_token(identity = user['username'])
                 return {
@@ -103,8 +119,6 @@ class UserLogin(Resource):
                 'access_token': access_token,
                 'refresh_token': refresh_token
                 }
-                print(user['name'] + user['username'])
-                print("yes")
             else:
                 return {'message': 'Invalid Credentials or account disabled'}
         else:
