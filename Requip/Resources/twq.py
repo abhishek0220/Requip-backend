@@ -41,5 +41,6 @@ class GetAUTHID(Resource):
             return Response(rjson, status=res.status_code)
         else:
             return {
-                "qr": rjson['qr']
+                "qr": rjson['qr'],
+                "token":rjson['token']
             }
