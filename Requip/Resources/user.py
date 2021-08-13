@@ -109,9 +109,10 @@ class UserLogin(Resource):
             user = db.users.find_one({'username': data['id'].lower() })
             
         if other_login and user is None:
+            username = str(uuid.uuid4())
             img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
             user = {
-                'username' : str(uuid.uuid4()),
+                'username' : username,
                 'name' : user_got['name'],
                 'email' : user_got['email'],
                 'password' : str(uuid.uuid4()),
