@@ -107,6 +107,29 @@ class UserLogin(Resource):
             user = db.users.find_one({'email': data['id'].lower() })
         else:
             user = db.users.find_one({'username': data['id'].lower() })
+            
+        if other_login and user is None:
+            img_loc = f'{username}/{str(uuid.uuid4())}.jpg'
+            user = {
+                'username' : str(uuid.uuid4()),
+                'name' : user_got['name'],
+                'email' : user_got['email'],
+                'password' : str(uuid.uuid4()),
+                'phone' : user_got['email'],
+                'image' : img_loc,
+                'about' : "My text by default",
+                'isactive' : False,
+                'last_reset_request' : int(time.time()),
+                'last_reset' : int(time.time())
+            }
+            try:
+                db.users.insert(user)
+            except:
+                return {'message' : "Some Error"}
+            else:
+                def_img = os.path.join(os.getenv('FILES'),'user.jpg')
+                FileManagement.upload(img_loc,def_img)
+            
         if(user):
             if other_login or (user['password'] == data['password'] and user.get('isactive', False)):
                 access_token = create_access_token(identity = user['username'])
